@@ -1,0 +1,66 @@
+{
+  "format": 1,
+  "restore": {
+    "C:\\Users\\Finance-2\\Downloads\\attendance-system-v2\\attendance-system\\fetcher\\ZKFetcher.csproj": {}
+  },
+  "projects": {
+    "C:\\Users\\Finance-2\\Downloads\\attendance-system-v2\\attendance-system\\fetcher\\ZKFetcher.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\Users\\Finance-2\\Downloads\\attendance-system-v2\\attendance-system\\fetcher\\ZKFetcher.csproj",
+        "projectName": "ZKFetcher",
+        "projectPath": "C:\\Users\\Finance-2\\Downloads\\attendance-system-v2\\attendance-system\\fetcher\\ZKFetcher.csproj",
+        "packagesPath": "C:\\Users\\Finance-2\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Finance-2\\Downloads\\attendance-system-v2\\attendance-system\\fetcher\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\Finance-2\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0-windows"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0-windows7.0": {
+            "targetAlias": "net8.0-windows",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        }
+      },
+      "frameworks": {
+        "net8.0-windows7.0": {
+          "targetAlias": "net8.0-windows",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.404/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

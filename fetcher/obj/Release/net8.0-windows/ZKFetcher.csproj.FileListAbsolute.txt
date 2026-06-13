@@ -1,0 +1,14 @@
+C:\Users\Finance-2\Downloads\attendance-system-v2\attendance-system\fetcher\bin\ZKFetcher.exe
+C:\Users\Finance-2\Downloads\attendance-system-v2\attendance-system\fetcher\bin\ZKFetcher.deps.json
+C:\Users\Finance-2\Downloads\attendance-system-v2\attendance-system\fetcher\bin\ZKFetcher.runtimeconfig.json
+C:\Users\Finance-2\Downloads\attendance-system-v2\attendance-system\fetcher\bin\ZKFetcher.dll
+C:\Users\Finance-2\Downloads\attendance-system-v2\attendance-system\fetcher\bin\ZKFetcher.pdb
+C:\Users\Finance-2\Downloads\attendance-system-v2\attendance-system\fetcher\obj\Release\net8.0-windows\ZKFetcher.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Finance-2\Downloads\attendance-system-v2\attendance-system\fetcher\obj\Release\net8.0-windows\ZKFetcher.AssemblyInfoInputs.cache
+C:\Users\Finance-2\Downloads\attendance-system-v2\attendance-system\fetcher\obj\Release\net8.0-windows\ZKFetcher.AssemblyInfo.cs
+C:\Users\Finance-2\Downloads\attendance-system-v2\attendance-system\fetcher\obj\Release\net8.0-windows\ZKFetcher.csproj.CoreCompileInputs.cache
+C:\Users\Finance-2\Downloads\attendance-system-v2\attendance-system\fetcher\obj\Release\net8.0-windows\ZKFetcher.dll
+C:\Users\Finance-2\Downloads\attendance-system-v2\attendance-system\fetcher\obj\Release\net8.0-windows\refint\ZKFetcher.dll
+C:\Users\Finance-2\Downloads\attendance-system-v2\attendance-system\fetcher\obj\Release\net8.0-windows\ZKFetcher.pdb
+C:\Users\Finance-2\Downloads\attendance-system-v2\attendance-system\fetcher\obj\Release\net8.0-windows\ZKFetcher.genruntimeconfig.cache
+C:\Users\Finance-2\Downloads\attendance-system-v2\attendance-system\fetcher\obj\Release\net8.0-windows\ref\ZKFetcher.dll
