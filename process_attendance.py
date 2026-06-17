@@ -36,10 +36,10 @@ MISSING_PUNCH = 120  # دقائق عند غياب البصمة
 # ────────────────────────────────────────────────────────────
 #  فلتر الفترة الزمنية — حدّد التاريخ الذي تريد التقرير منه وإليه
 #  اتركهما None لعرض كل البيانات بدون فلترة
-#  صيغة التاريخ: "YYYY-MM-DD"  مثال: "2026-04-01"
+#  صيغة التاريخ: "YYYY-MM-DD"  مثال: "2026-06-01"
 # ────────────────────────────────────────────────────────────
-DATE_FROM = "2026-04-01"   # مثال: "2026-04-01"
-DATE_TO   = "2026-04-30"   # مثال: "2026-04-30"
+DATE_FROM = "2026-06-01"   # مثال: "2026-06-01"
+DATE_TO   = "2026-06-30"   # مثال: "2026-06-30"
 
 # ============================================================
 # HELPERS
@@ -139,7 +139,8 @@ def fmt_date_excel(d) -> str:
 def time_str(t) -> str:
     if t is None:
         return ""
-    return t.strftime("%H:%M")
+    # تنسيق 12 ساعة مع AM/PM (مثال: 7:30 AM)
+    return t.strftime("%I:%M %p").lstrip("0")
 
 
 # ============================================================
@@ -208,16 +209,35 @@ def load_data(filepath: str) -> pd.DataFrame:
 
 
 def process_employee(records: list) -> list:
-    rows = []
+    # نخزّن السجلات الفعلية حسب التاريخ، ثم نملأ كل أيام الفترة المحددة
+    # (إذا كانت محددة) — أي يوم بدون بصمة يظهر بتأخير=120 وخروج مبكر=120
+    by_date = {}
     for r in records:
         d = parse_date_any(r.get("date"))
         if d is None:
             continue
-        if not in_date_range(d, DATE_FROM_PARSED, DATE_TO_PARSED):
-            continue
-
         in_t = parse_time(r.get("in_time"))
         out_t = parse_time(r.get("out_time"))
+        by_date[d] = (in_t, out_t)
+
+    if DATE_FROM_PARSED and DATE_TO_PARSED:
+        # نولّد كل تواريخ الفترة بالكامل (حتى الأيام بدون أي بصمة)
+        all_dates = []
+        d = DATE_FROM_PARSED
+        one_day = pd.Timedelta(days=1)
+        while d <= DATE_TO_PARSED:
+            all_dates.append(d)
+            d = (pd.Timestamp(d) + one_day).date()
+    else:
+        # بدون فلتر فترة: نعرض فقط الأيام التي فيها سجل فعلي (كالسابق)
+        all_dates = sorted(by_date.keys())
+
+    rows = []
+    for d in all_dates:
+        if DATE_FROM_PARSED or DATE_TO_PARSED:
+            if not in_date_range(d, DATE_FROM_PARSED, DATE_TO_PARSED):
+                continue
+        in_t, out_t = by_date.get(d, (None, None))
         shift = detect_shift(in_t, out_t)
         late = calc_late(in_t, shift)
         early = calc_early_leave(out_t, shift)
@@ -276,7 +296,7 @@ def generate_report(employee_name: str, rows: list, output_dir: str):
         data_cell(ws, r, 6, early, bg=bg, bold=early > 0, color="ED7D31" if early > 0 else "375623")
         r += 1
 
-    # ---- صف الإجمالي بمعادلة SUM (مطابق للمرجع) ----
+    # ---- صف المجموع: E و F كل واحد بمعادلة SUM الخاصة به ----
     total_row = r
     ws.merge_cells(start_row=total_row, start_column=1, end_row=total_row, end_column=4)
     data_cell(ws, total_row, 1, "المجموع", bold=True, bg="F2F2F2")
@@ -290,6 +310,15 @@ def generate_report(employee_name: str, rows: list, output_dir: str):
 
     data_cell(ws, total_row, 5, late_formula, bold=True, bg="F2F2F2")
     data_cell(ws, total_row, 6, early_formula, bold=True, bg="F2F2F2")
+
+    # ---- صف إضافي تحت المجموع: مجموع المجموعين معاً (E33+F33) ----
+    grand_row = total_row + 1
+    ws.merge_cells(start_row=grand_row, start_column=1, end_row=grand_row, end_column=4)
+    data_cell(ws, grand_row, 1, "إجمالي (تأخير + خروج مبكر)", bold=True, bg="DCE6F1", color="1F4E79")
+
+    grand_formula = f"=E{total_row}+F{total_row}"
+    ws.merge_cells(start_row=grand_row, start_column=5, end_row=grand_row, end_column=6)
+    data_cell(ws, grand_row, 5, grand_formula, bold=True, bg="DCE6F1", color="1F4E79")
 
     ws.freeze_panes = "A2"
     ws.print_title_rows = "1:1"
@@ -352,7 +381,8 @@ def main():
         path = generate_report(name, rows, output_dir)
         total_late = sum(r["late"] for r in rows)
         total_early = sum(r["early"] for r in rows)
-        print(f"  ✅ {name} → {len(rows)} يوم | تأخير: {total_late}د | خروج مبكر: {total_early}د")
+        total_all = total_late + total_early
+        print(f"  ✅ {name} → {len(rows)} يوم | تأخير: {total_late}د | خروج مبكر: {total_early}د | الإجمالي: {total_all}د")
         generated.append(path)
 
     print(f"\n✅ تم إنشاء {len(generated)} تقرير في مجلد output/")
