@@ -3,15 +3,17 @@
 """
 ZKTeco MB10-VL Fetcher (pyzk)
 سحب بيانات الحضور من جهاز البصمة وحفظها CSV
+يقرأ أسماء الموظفين العربية مباشرة من البيانات الخام (ترميز cp1256)
 """
 
 import sys
 import csv
 import os
+import struct
 from collections import defaultdict
 
 try:
-    from zk import ZK
+    from zk import ZK, const
 except ImportError:
     print("[ERROR] pyzk not installed")
     print("        Run: pip install pyzk")
@@ -27,6 +29,68 @@ TIMEOUT     = 15
 
 SCRIPT_DIR  = os.path.dirname(os.path.abspath(__file__))
 OUTPUT_CSV  = os.path.join(SCRIPT_DIR, "input", "attendance_raw.csv")
+
+# ترميز الأسماء العربية على هذا الجهاز (تأكدنا منه بالتشخيص الخام)
+NAME_ENCODING = "cp1256"
+
+# تركيب سجل المستخدم (72 بايت) — نفس تنسيق pyzk الرسمي
+# <H  uid (2 بايت)
+#  B  privilege (1 بايت)
+# 8s  password (8 بايت)
+# 24s name (24 بايت)   <-- هنا الاسم العربي
+#  I  card (4 بايت)
+#  x  padding (1 بايت)
+# 7s  group_id (7 بايت)
+#  x  padding (1 بايت)
+# 24s user_id (24 بايت)
+USER_STRUCT_FMT = '<HB8s24sIx7sx24s'
+USER_RECORD_SIZE = 72
+
+
+def read_arabic_names(conn):
+    """
+    يقرأ بيانات المستخدمين الخام من الجهاز ويستخرج الاسم العربي
+    بترميز cp1256 بدل الاعتماد على تفسير pyzk الافتراضي (الذي يُرجع NN-x
+    لأنه يحاول فك الاسم بترميز utf-8/latin1 فيفشل).
+    يُرجع: dict {uid_str: name}
+    """
+    name_map = {}
+    try:
+        command = const.CMD_USERTEMP_RRQ
+        fct = const.FCT_USER
+        userdata, size = conn.read_with_buffer(command, fct=fct)
+    except Exception as e:
+        print(f"[WARN] Could not read raw user buffer: {e}")
+        return name_map
+
+    if not userdata or len(userdata) <= 4:
+        return name_map
+
+    # أول 4 بايتات = total_size header (مثل ما يفعل pyzk) — يجب تجاوزها
+    userdata = userdata[4:]
+
+    while len(userdata) >= USER_RECORD_SIZE:
+        chunk = userdata[:USER_RECORD_SIZE]
+        try:
+            uid, privilege, password, name, card, group_id, user_id = struct.unpack(
+                USER_STRUCT_FMT, chunk
+            )
+        except struct.error:
+            break
+
+        name_clean = name.split(b"\x00")[0]
+        try:
+            name_decoded = name_clean.decode(NAME_ENCODING, errors="strict").strip()
+        except UnicodeDecodeError:
+            # احتياط: اسم لاتيني أو بيانات تالفة
+            name_decoded = name_clean.decode("ascii", errors="ignore").strip()
+
+        if uid > 0 and name_decoded:
+            name_map[str(uid)] = name_decoded
+
+        userdata = userdata[USER_RECORD_SIZE:]
+
+    return name_map
 
 
 def main():
@@ -57,18 +121,24 @@ def main():
     except Exception:
         pass
 
-    # --- أسماء الموظفين ---
-    print("[...] Reading users...")
-    name_map = {}
-    try:
-        users = conn.get_users()
-        for u in users:
-            uid = str(u.user_id)
-            nm = (u.name or "").strip()
-            name_map[uid] = nm if nm else f"EMP_{uid}"
-        print(f"[OK] {len(name_map)} users found")
-    except Exception as e:
-        print(f"[WARN] Could not read users: {e}")
+    # --- أسماء الموظفين (العربية، من البيانات الخام) ---
+    print("[...] Reading users (raw, arabic-aware)...")
+    name_map = read_arabic_names(conn)
+
+    if name_map:
+        print(f"[OK] {len(name_map)} arabic names extracted")
+        for uid, nm in list(name_map.items())[:5]:
+            print(f"      uid={uid} -> {nm}")
+    else:
+        print("[WARN] Raw read failed, falling back to pyzk get_users()")
+        try:
+            users = conn.get_users()
+            for u in users:
+                uid = str(u.user_id)
+                nm = (u.name or "").strip()
+                name_map[uid] = nm if nm else f"EMP_{uid}"
+        except Exception as e:
+            print(f"[WARN] Fallback also failed: {e}")
 
     # --- سجلات الحضور ---
     print("[...] Reading attendance logs (this may take a moment)...")
